@@ -13,13 +13,15 @@ import {
   Moon,
 } from "lucide-react";
 
-// ---- EmailJS (preencha depois de criar a conta em emailjs.com) --------
+// ---- EmailJS ------------------------------------------------------------
+// As chaves vêm de variáveis de ambiente (não ficam craveadas no código).
 // 1. Crie uma conta em https://www.emailjs.com/
 // 2. Crie um Service (ex.: Gmail) e um Template com os campos: nome, email, assunto, mensagem
-// 3. Cole os 3 IDs abaixo. O PUBLIC_KEY pode ficar exposto no front, é feito pra isso.
-const EMAILJS_SERVICE_ID = "COLE_SEU_SERVICE_ID_AQUI";
-const EMAILJS_TEMPLATE_ID = "COLE_SEU_TEMPLATE_ID_AQUI";
-const EMAILJS_PUBLIC_KEY = "COLE_SUA_PUBLIC_KEY_AQUI";
+// 3. Local: copie .env.example pra .env e preencha os 3 valores
+// 4. Produção: cadastre as mesmas 3 variáveis em Vercel > Settings > Environment Variables
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
 // ---- Conteúdo (edite aqui) ---------------------------------------------
 const NAME = "Leandro Matos";
@@ -372,6 +374,11 @@ export default function App() {
 
   const handleSend = async (e) => {
     e.preventDefault();
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+      console.error("EmailJS sem configuração: confira as variáveis VITE_EMAILJS_* no .env");
+      setSendStatus("error");
+      return;
+    }
     setSendStatus("sending");
     try {
       await emailjs.send(
