@@ -5,9 +5,9 @@ import emailjs from "@emailjs/browser";
 // 1. Crie uma conta em https://www.emailjs.com/
 // 2. Crie um Service (ex.: Gmail) e um Template com os campos: nome, email, assunto, mensagem
 // 3. Cole os 3 IDs abaixo. O PUBLIC_KEY pode ficar exposto no front, é feito pra isso.
-const EMAILJS_SERVICE_ID = "COLE_SEU_SERVICE_ID_AQUI";
-const EMAILJS_TEMPLATE_ID = "COLE_SEU_TEMPLATE_ID_AQUI";
-const EMAILJS_PUBLIC_KEY = "COLE_SUA_PUBLIC_KEY_AQUI";
+const EMAILJS_SERVICE_ID = "service_sybifue";
+const EMAILJS_TEMPLATE_ID = "template_m80cy6o";
+const EMAILJS_PUBLIC_KEY = "fAY7b5B9FGnpPEKlj";
 
 // ---- Conteúdo (edite aqui) ---------------------------------------------
 const NAME = "Leandro Matos";
