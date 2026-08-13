@@ -14,8 +14,8 @@ const NAME = "Leandro Matos";
 const INITIALS = "LM";
 const ROLE = "Analista de Cibersegurança e Suporte especializado";
 const BIO = [
-  "Sou analista especializado em Cibersegurança, atuando no blue team — foco em monitorar, detectar e responder a ameaças antes que elas virem incidentes.",
-  "Minha base em suporte técnico me deu uma visão prática de infraestrutura: redes, sistemas e o dia a dia de quem depende deles funcionando. Isso molda a forma como penso segurança — não só teoria, mas o que realmente protege um ambiente real.",
+  "Sou analista especializado em Cibersegurança, atuando no blue team foco em monitorar, detectar e responder a ameaças antes que elas virem incidentes.",
+  "Minha base em suporte técnico me deu uma visão prática de infraestrutura: redes, sistemas e o dia a dia de quem depende deles funcionando. Isso molda a forma como penso segurança não só teoria, mas o que realmente protege um ambiente real.",
   "Atualmente também estou me especializando para atuar como Analista NOC (Network Operations Center), unindo monitoramento de rede e disponibilidade de infraestrutura à resposta a incidentes de segurança.",
   "Construo e estudo ferramentas de detecção (honeypots, SIEM) para entender o comportamento de um atacante e transformar isso em alertas e respostas mais rápidas.",
 ];
@@ -29,7 +29,7 @@ const CONTACTS = {
 
 const FOCUS_CARDS = [
   { title: "Monitoramento & Detecção", desc: "Acompanhamento de logs e tráfego em busca de sinais de comportamento anômalo." },
-  { title: "NOC — em especialização", desc: "Monitoramento de disponibilidade e saúde de rede, correlacionando falhas de infraestrutura com possíveis incidentes de segurança." },
+  { title: "NOC em especialização", desc: "Monitoramento de disponibilidade e saúde de rede, correlacionando falhas de infraestrutura com possíveis incidentes de segurança." },
   { title: "Resposta a Incidentes", desc: "Triagem e contenção de ameaças, do primeiro alerta até a mitigação." },
   { title: "Hardening & Suporte", desc: "Redução de superfície de ataque e suporte técnico especializado em infraestrutura." },
 ];
@@ -61,7 +61,7 @@ const PROJECTS = [
   {
     tag: "PROJETO EM DESTAQUE",
     title: "SIEM Simples",
-    desc: "Sistema simplificado de SIEM que centraliza logs de diferentes fontes, correlaciona eventos suspeitos e dispara alertas em tempo real — pensado para dar visibilidade rápida sobre o que está acontecendo na rede.",
+    desc: "Sistema simplificado de SIEM que centraliza logs de diferentes fontes, correlaciona eventos suspeitos e dispara alertas em tempo real, pensado para dar visibilidade rápida sobre o que está acontecendo na rede.",
     tags: ["Python", "SQL", "Log Parsing", "Dashboards", "Alertas"],
   },
 ];
@@ -649,7 +649,7 @@ export default function App() {
               </span>
             </h1>
             <p className="mt-6 max-w-md" style={{ color: t.textMuted }}>
-              {ROLE}, se especializando em NOC. Foco em detecção de ameaças, monitoramento de rede e resposta a incidentes — blue team no dia a dia.
+              {ROLE}, se especializando em NOC. Foco em detecção de ameaças, monitoramento de rede e resposta a incidentes, blue team no dia a dia.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <a
@@ -761,7 +761,7 @@ export default function App() {
             </p>
             <h2 className="mt-4 text-3xl font-bold leading-tight">Capacidade técnica com leitura de ameaça real.</h2>
             <p className="mt-4" style={{ color: t.textMuted }}>
-              A combinação entre suporte técnico, redes e segurança cria uma base sólida para atuar tanto na prevenção quanto na resposta — e é essa base que sustenta minha transição para NOC.
+              A combinação entre suporte técnico, redes e segurança cria uma base sólida para atuar tanto na prevenção quanto na resposta e é essa base que sustenta minha transição para NOC.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               {Object.keys(TABS).map((tabName) => (
