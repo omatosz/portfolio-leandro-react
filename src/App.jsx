@@ -1,27 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import emailjs from "@emailjs/browser";
-import {
-  Mail,
-  MapPin,
-  Check,
-  ArrowUpRight,
-  Terminal,
-  ShieldCheck,
-  Radar,
-  Send,
-  Sun,
-  Moon,
-} from "lucide-react";
-
-// ---- EmailJS ------------------------------------------------------------
-// As chaves vêm de variáveis de ambiente (não ficam craveadas no código).
-// 1. Crie uma conta em https://www.emailjs.com/
-// 2. Crie um Service (ex.: Gmail) e um Template com os campos: nome, email, assunto, mensagem
-// 3. Local: copie .env.example pra .env e preencha os 3 valores
-// 4. Produção: cadastre as mesmas 3 variáveis em Vercel > Settings > Environment Variables
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
 // ---- Conteúdo (edite aqui) ---------------------------------------------
 const NAME = "Leandro Matos";
@@ -176,73 +153,18 @@ function useTypedLines(lines, speed = 45, pause = 1200) {
   return display;
 }
 
-// detecta se é um dispositivo com mouse de verdade (não celular/tablet no touch)
-function useIsDesktop() {
-  const query = "(hover: hover) and (pointer: fine)";
-  const [isDesktop, setIsDesktop] = useState(
-    () => typeof window !== "undefined" && window.matchMedia(query).matches
-  );
+function useMouse() {
+  const [pos, setPos] = useState({ x: -200, y: -200, nx: 0, ny: 0 });
   useEffect(() => {
-    const mql = window.matchMedia(query);
-    const handler = (e) => setIsDesktop(e.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, []);
-  return isDesktop;
-}
-
-function useMouse(enabled) {
-  const [pos, setPos] = useState({ x: -200, y: -200, nx: 0, ny: 0, active: false });
-  useEffect(() => {
-    if (!enabled) return;
-    const handleMove = (e) => {
+    const handler = (e) => {
       const nx = (e.clientX / window.innerWidth) * 2 - 1;
       const ny = (e.clientY / window.innerHeight) * 2 - 1;
-      setPos({ x: e.clientX, y: e.clientY, nx, ny, active: true });
+      setPos({ x: e.clientX, y: e.clientY, nx, ny });
     };
-    // some da tela quando o mouse sai da janela (ex.: sobe até a barra de URL)
-    // ou quando a aba perde o foco, senão o efeito fica "travado" no último ponto
-    const handleLeave = () => setPos((p) => ({ ...p, active: false }));
-
-    window.addEventListener("mousemove", handleMove);
-    document.documentElement.addEventListener("mouseleave", handleLeave);
-    window.addEventListener("blur", handleLeave);
-    return () => {
-      window.removeEventListener("mousemove", handleMove);
-      document.documentElement.removeEventListener("mouseleave", handleLeave);
-      window.removeEventListener("blur", handleLeave);
-    };
-  }, [enabled]);
-  return pos;
-}
-
-// rastro glitch que segue o mouse sem esconder o cursor real
-function useGlitchTrail(mouse, enabled) {
-  const [trail, setTrail] = useState([]);
-  const lastRef = useRef(0);
-  const idRef = useRef(0);
-
-  useEffect(() => {
-    if (!enabled || !mouse.active) {
-      setTrail([]);
-      return;
-    }
-    const now = Date.now();
-    if (now - lastRef.current < 45) return;
-    lastRef.current = now;
-    idRef.current += 1;
-    const point = { id: idRef.current, x: mouse.x, y: mouse.y };
-    setTrail((prev) => [...prev.slice(-7), point]);
-  }, [mouse.x, mouse.y, mouse.active, enabled]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTrail((prev) => (prev.length ? prev.slice(1) : prev));
-    }, 90);
-    return () => clearInterval(interval);
+    window.addEventListener("mousemove", handler);
+    return () => window.removeEventListener("mousemove", handler);
   }, []);
-
-  return trail;
+  return pos;
 }
 
 function useReveal() {
@@ -286,6 +208,115 @@ function useActiveSection(ids) {
   return active;
 }
 
+function Icon({ children, size = 16, ...props }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      {children}
+    </svg>
+  );
+}
+
+const Sun = (props) => (
+  <Icon {...props}>
+    <circle cx="12" cy="12" r="4" />
+    <line x1="12" y1="2" x2="12" y2="4" />
+    <line x1="12" y1="20" x2="12" y2="22" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="2" y1="12" x2="4" y2="12" />
+    <line x1="20" y1="12" x2="22" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </Icon>
+);
+
+const Moon = (props) => (
+  <Icon {...props}>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </Icon>
+);
+
+const Terminal = (props) => (
+  <Icon {...props}>
+    <polyline points="4 17 10 11 4 5" />
+    <line x1="12" y1="19" x2="20" y2="19" />
+  </Icon>
+);
+
+const ShieldCheck = (props) => (
+  <Icon {...props}>
+    <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3z" />
+    <polyline points="9 12 11 14 15 10" />
+  </Icon>
+);
+
+const Radar = (props) => (
+  <Icon {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 3a9 9 0 0 1 9 9" />
+    <circle cx="17" cy="7" r="1.3" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
+const Send = (props) => (
+  <Icon {...props}>
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+  </Icon>
+);
+
+const Mail = (props) => (
+  <Icon {...props}>
+    <rect x="2" y="4" width="20" height="16" rx="2" />
+    <polyline points="2 7 12 13 22 7" />
+  </Icon>
+);
+
+const MapPin = (props) => (
+  <Icon {...props}>
+    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </Icon>
+);
+
+const Check = (props) => (
+  <Icon {...props}>
+    <polyline points="20 6 9 17 4 12" />
+  </Icon>
+);
+
+const ArrowUpRight = (props) => (
+  <Icon {...props}>
+    <line x1="7" y1="17" x2="17" y2="7" />
+    <polyline points="7 7 17 7 17 17" />
+  </Icon>
+);
+
+const MenuIcon = (props) => (
+  <Icon {...props}>
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="18" x2="21" y2="18" />
+  </Icon>
+);
+
+const XIcon = (props) => (
+  <Icon {...props}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </Icon>
+);
+
 function GithubIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" {...props}>
@@ -310,30 +341,6 @@ function WhatsAppIcon(props) {
   );
 }
 
-// foto de perfil, com fallback pras iniciais caso o arquivo ainda não exista em /public
-function PhotoBadge({ t, size = 36 }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) {
-    return (
-      <div
-        className="neon-btn flex items-center justify-center rounded-lg text-sm font-bold"
-        style={{ width: size, height: size, background: `linear-gradient(135deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}
-      >
-        {INITIALS}
-      </div>
-    );
-  }
-  return (
-    <img
-      src="/profile.jpg"
-      alt={NAME}
-      onError={() => setFailed(true)}
-      className="neon-btn rounded-lg object-cover"
-      style={{ width: size, height: size }}
-    />
-  );
-}
-
 // componente de seção que "revela" ao entrar na tela
 function Reveal({ as: Tag = "div", className = "", children, ...rest }) {
   const [ref, visible] = useReveal();
@@ -349,14 +356,12 @@ function Reveal({ as: Tag = "div", className = "", children, ...rest }) {
 export default function App() {
   const [theme, setTheme] = useState("dark");
   const [tab, setTab] = useState("Stack");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [booted, setBooted] = useState(false);
   const [bootStep, setBootStep] = useState(0);
   const typed = useTypedLines(TERMINAL_LINES);
   const [form, setForm] = useState({ nome: "", email: "", assunto: "", mensagem: "" });
-  const [sendStatus, setSendStatus] = useState("idle"); // idle | sending | success | error
-  const isDesktop = useIsDesktop();
-  const mouse = useMouse(isDesktop);
-  const trail = useGlitchTrail(mouse, isDesktop);
+  const mouse = useMouse();
   const active = useActiveSection(NAV_ITEMS.map((n) => n.id));
 
   const t = THEME[theme];
@@ -372,36 +377,16 @@ export default function App() {
 
   const toggleTheme = useCallback(() => setTheme((v) => (v === "dark" ? "light" : "dark")), []);
 
-  const handleSend = async (e) => {
+  const handleSend = (e) => {
     e.preventDefault();
-    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
-      console.error("EmailJS sem configuração: confira as variáveis VITE_EMAILJS_* no .env");
-      setSendStatus("error");
-      return;
-    }
-    setSendStatus("sending");
-    try {
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        {
-          nome: form.nome,
-          email: form.email,
-          assunto: form.assunto || "Contato pelo portfólio",
-          mensagem: form.mensagem,
-        },
-        { publicKey: EMAILJS_PUBLIC_KEY }
-      );
-      setSendStatus("success");
-      setForm({ nome: "", email: "", assunto: "", mensagem: "" });
-    } catch (err) {
-      console.error("Falha ao enviar via EmailJS:", err);
-      setSendStatus("error");
-    }
+    const body = encodeURIComponent(`Nome: ${form.nome}\nE-mail: ${form.email}\n\n${form.mensagem}`);
+    const subject = encodeURIComponent(form.assunto || "Contato pelo portfólio");
+    window.location.href = `mailto:${CONTACTS.email}?subject=${subject}&body=${body}`;
   };
 
   const scrollTo = (id) => (e) => {
     e.preventDefault();
+    setMobileMenuOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -412,7 +397,7 @@ export default function App() {
   return (
     <div
       style={{ background: t.bg, color: t.text }}
-      className="relative min-h-screen w-full font-sans transition-colors duration-500 selection:bg-cyan-500/30"
+      className="relative min-h-screen w-full font-sans transition-colors duration-500 selection:bg-cyan-500/30 cursor-none"
     >
       <style>{`
         html { scroll-behavior: smooth; }
@@ -434,20 +419,13 @@ export default function App() {
         .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
         .reveal-visible { opacity: 1; transform: translateY(0); }
 
-        .glitch-dot {
+        .neon-cursor {
           position: fixed;
           top: 0; left: 0;
-          width: 6px; height: 6px;
-          border-radius: 1px;
           pointer-events: none;
           z-index: 60;
-          mix-blend-mode: difference;
+          filter: drop-shadow(0 0 3px ${t.accent}) drop-shadow(0 0 9px ${t.accent}) drop-shadow(0 0 16px ${t.accent}aa);
         }
-        .glitch-dot::before, .glitch-dot::after {
-          content: ""; position: absolute; inset: 0; border-radius: 1px; mix-blend-mode: difference;
-        }
-        .glitch-dot::before { background: ${t.accent2}; transform: translate(1.5px,-1px); }
-        .glitch-dot::after { background: #00fff2; transform: translate(-1.5px,1px); }
 
         @keyframes bootBar { from { width: 0% } to { width: 100% } }
         .boot-bar { animation: bootBar 1.9s ease forwards; }
@@ -474,29 +452,28 @@ export default function App() {
         </div>
       )}
 
-      {/* rastro glitch do cursor — só no desktop, e só enquanto o mouse se move dentro da janela */}
-      {isDesktop &&
-        trail.map((p, i) => (
-          <div
-            key={p.id}
-            className="glitch-dot"
-            style={{
-              transform: `translate(${p.x - 3}px, ${p.y - 3}px)`,
-              opacity: (i + 1) / trail.length,
-            }}
-          />
-        ))}
-
-      {/* spotlight seguindo o mouse — some suavemente quando o mouse sai da janela */}
-      {isDesktop && (
-        <div
-          className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
-          style={{
-            opacity: mouse.active ? 1 : 0,
-            background: `radial-gradient(560px circle at ${mouse.x}px ${mouse.y}px, ${t.accent}1f, transparent 70%)`,
-          }}
+      {/* cursor customizado: seta preta com brilho neon ao redor */}
+      <svg
+        className="neon-cursor"
+        width="26"
+        height="26"
+        viewBox="0 0 26 26"
+        style={{ transform: `translate(${mouse.x - 2}px, ${mouse.y - 2}px)` }}
+      >
+        <path
+          d="M3 2 L3 20 L8 15.5 L11.5 22.5 L14.5 21 L11 14 L18 14 Z"
+          fill="#0a0a0a"
+          stroke="#ffffff"
+          strokeWidth="1.2"
+          strokeLinejoin="round"
         />
-      )}
+      </svg>
+
+      {/* spotlight seguindo o mouse */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{ background: `radial-gradient(560px circle at ${mouse.x}px ${mouse.y}px, ${t.accent}1f, transparent 70%)` }}
+      />
 
       {/* NAV */}
       <header
@@ -505,10 +482,15 @@ export default function App() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <PhotoBadge t={t} size={36} />
+            <div
+              className="neon-btn flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold"
+              style={{ background: `linear-gradient(135deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}
+            >
+              {INITIALS}
+            </div>
             <span className="font-semibold tracking-wide">{NAME.toUpperCase()}</span>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 sm:gap-6">
             <nav className="hidden gap-8 text-sm sm:flex">
               {NAV_ITEMS.map((item) => (
                 <a
@@ -530,8 +512,35 @@ export default function App() {
             >
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
+            <button
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              aria-label="Abrir menu"
+              className="flex h-9 w-9 items-center justify-center rounded-full border transition-colors sm:hidden"
+              style={{ borderColor: t.border, color: t.textMuted }}
+            >
+              {mobileMenuOpen ? <XIcon size={16} /> : <MenuIcon size={16} />}
+            </button>
           </div>
         </div>
+
+        {mobileMenuOpen && (
+          <nav
+            className="flex flex-col gap-1 border-t px-6 py-3 text-sm sm:hidden"
+            style={{ borderColor: t.border, background: t.navBg }}
+          >
+            {NAV_ITEMS.map((item) => (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                onClick={scrollTo(item.id)}
+                style={{ color: active === item.id ? t.accent : t.textMuted }}
+                className="rounded-lg px-2 py-2.5 font-medium transition-colors"
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+        )}
       </header>
 
       {/* HERO */}
@@ -544,14 +553,14 @@ export default function App() {
           className="pointer-events-none absolute bottom-0 left-0 h-72 w-72 rounded-full blur-3xl"
           style={{ background: `${t.accent2}24`, transform: `translate(${-mouse.nx * 18}px, ${-mouse.ny * 18}px)` }}
         />
-        <div className="relative mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center">
+        <div className="relative mx-auto grid max-w-6xl gap-12 px-5 py-14 sm:px-6 sm:py-20 lg:grid-cols-2 lg:items-center">
           <Reveal>
             <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
               Defesa vigilante.
               <br />
               Resposta rápida.
               <br />
-              <span style={{ background: `linear-gradient(90deg, ${t.accent}, ${t.accent2})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+              <span style={{ color: t.accent }}>
                 Sinais que protegem.
               </span>
             </h1>
@@ -634,7 +643,7 @@ export default function App() {
 
       {/* VISÃO */}
       <section id="visao" className="relative z-10 border-b" style={{ borderColor: t.border }}>
-        <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl gap-12 px-5 py-14 sm:px-6 sm:py-20 lg:grid-cols-2">
           <Reveal>
             <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: t.accent }}>Visão profissional</p>
             <h2 className="mt-3 text-3xl font-bold leading-snug sm:text-4xl">Uma defesa eficaz começa antes do primeiro alerta.</h2>
@@ -661,7 +670,7 @@ export default function App() {
 
       {/* EXPERTISE */}
       <section id="expertise" className="relative z-10 border-b" style={{ borderColor: t.border }}>
-        <div className="mx-auto grid max-w-6xl gap-10 px-6 py-20 lg:grid-cols-[320px_1fr]">
+        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:px-6 sm:py-20 lg:grid-cols-[320px_1fr]">
           <Reveal>
             <p className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide" style={{ borderColor: `${t.accent}59`, color: t.accent }}>
               <ShieldCheck size={12} /> Expertise
@@ -714,7 +723,7 @@ export default function App() {
 
       {/* PROJETOS */}
       <section id="projetos" className="relative z-10 border-b" style={{ borderColor: t.border }}>
-        <div className="mx-auto max-w-6xl px-6 py-20">
+        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-6 sm:py-20">
           <Reveal>
             <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: t.accent }}>Projetos em destaque</p>
             <h2 className="mt-3 max-w-2xl text-3xl font-bold leading-snug sm:text-4xl">Ferramentas construídas para detectar, registrar e responder.</h2>
@@ -743,11 +752,13 @@ export default function App() {
 
       {/* CONTATO */}
       <section id="contato" className="relative z-10">
-        <div className="mx-auto max-w-6xl px-6 py-20">
+        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-6 sm:py-20">
           <Reveal className="grid gap-6 lg:grid-cols-[320px_1fr]">
             <div className="flex flex-col justify-between rounded-2xl border p-6" style={{ borderColor: t.border, background: t.card }}>
               <div>
-                <PhotoBadge t={t} size={56} />
+                <div className="neon-btn flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold" style={{ background: `linear-gradient(135deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}>
+                  {INITIALS}
+                </div>
                 <h3 className="mt-4 text-lg font-semibold">Vamos nos conectar</h3>
                 <div className="mt-4 flex gap-3">
                   {[
@@ -811,22 +822,11 @@ export default function App() {
                 </label>
                 <button
                   type="submit"
-                  disabled={sendStatus === "sending"}
-                  className="neon-btn mt-2 flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-transform hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100 sm:col-span-2"
+                  className="neon-btn mt-2 flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-transform hover:scale-[1.02] sm:col-span-2"
                   style={{ background: `linear-gradient(90deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}
                 >
-                  <Send size={15} /> {sendStatus === "sending" ? "Enviando..." : "Enviar mensagem"}
+                  <Send size={15} /> Enviar mensagem
                 </button>
-                {sendStatus === "success" && (
-                  <p className="text-sm sm:col-span-2" style={{ color: t.accent }}>
-                    Mensagem enviada. Retorno em breve.
-                  </p>
-                )}
-                {sendStatus === "error" && (
-                  <p className="text-sm text-red-400 sm:col-span-2">
-                    Não deu pra enviar agora. Tenta de novo em instantes ou usa o e-mail direto.
-                  </p>
-                )}
               </form>
             </div>
           </Reveal>
