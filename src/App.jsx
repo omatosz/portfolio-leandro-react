@@ -1,4 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import emailjs from "@emailjs/browser";
+
+// ---- EmailJS (preencha depois de criar a conta em emailjs.com) --------
+// 1. Crie uma conta em https://www.emailjs.com/
+// 2. Crie um Service (ex.: Gmail) e um Template com os campos: nome, email, assunto, mensagem
+// 3. Cole os 3 IDs abaixo. O PUBLIC_KEY pode ficar exposto no front, é feito pra isso.
+const EMAILJS_SERVICE_ID = "COLE_SEU_SERVICE_ID_AQUI";
+const EMAILJS_TEMPLATE_ID = "COLE_SEU_TEMPLATE_ID_AQUI";
+const EMAILJS_PUBLIC_KEY = "COLE_SUA_PUBLIC_KEY_AQUI";
 
 // ---- Conteúdo (edite aqui) ---------------------------------------------
 const NAME = "Leandro Matos";
@@ -40,7 +49,7 @@ const TABS = {
   ],
 };
 
-const TECH_RADAR = ["Linux", "Python", "SQL", "Redes TCP/IP", "Wireshark", "SIEM", "Honeypots", "Firewall", "Nmap", "Blue Team", "NOC", "Hardening", "Suporte N2", "Git"];
+const TECH_RADAR = ["Linux", "Python", "SQL", "Redes TCP/IP", "Wireshark", "SIEM", "Honeypots", "Firewall", "Nmap", "Blue Team", "NOC", "Hardening", "Suporte N1", "Git"];
 
 const PROJECTS = [
   {
@@ -153,17 +162,44 @@ function useTypedLines(lines, speed = 45, pause = 1200) {
   return display;
 }
 
-function useMouse() {
-  const [pos, setPos] = useState({ x: -200, y: -200, nx: 0, ny: 0 });
+// detecta se é um dispositivo com mouse de verdade (não celular/tablet no touch)
+function useIsDesktop() {
+  const query = "(hover: hover) and (pointer: fine)";
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(query).matches
+  );
   useEffect(() => {
-    const handler = (e) => {
+    const mql = window.matchMedia(query);
+    const handler = (e) => setIsDesktop(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+  return isDesktop;
+}
+
+function useMouse(enabled) {
+  const [pos, setPos] = useState({ x: -200, y: -200, nx: 0, ny: 0, active: false });
+  useEffect(() => {
+    if (!enabled) return;
+    const handleMove = (e) => {
       const nx = (e.clientX / window.innerWidth) * 2 - 1;
       const ny = (e.clientY / window.innerHeight) * 2 - 1;
-      setPos({ x: e.clientX, y: e.clientY, nx, ny });
+      setPos({ x: e.clientX, y: e.clientY, nx, ny, active: true });
     };
-    window.addEventListener("mousemove", handler);
-    return () => window.removeEventListener("mousemove", handler);
-  }, []);
+    // some quando o mouse sai da janela (ex.: sobe até a barra de URL) ou
+    // quando a aba perde o foco, senão o cursor customizado e o brilho
+    // ficam "travados" no último ponto capturado
+    const handleLeave = () => setPos((p) => ({ ...p, active: false }));
+
+    window.addEventListener("mousemove", handleMove);
+    document.documentElement.addEventListener("mouseleave", handleLeave);
+    window.addEventListener("blur", handleLeave);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      document.documentElement.removeEventListener("mouseleave", handleLeave);
+      window.removeEventListener("blur", handleLeave);
+    };
+  }, [enabled]);
   return pos;
 }
 
@@ -351,6 +387,30 @@ function Reveal({ as: Tag = "div", className = "", children, ...rest }) {
   );
 }
 
+// foto de perfil, com fallback pras iniciais caso o arquivo ainda não exista em /public
+function PhotoBadge({ t, size = 36 }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div
+        className="neon-btn flex items-center justify-center rounded-lg text-sm font-bold"
+        style={{ width: size, height: size, background: `linear-gradient(135deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}
+      >
+        {INITIALS}
+      </div>
+    );
+  }
+  return (
+    <img
+      src="/profile.jpg"
+      alt={NAME}
+      onError={() => setFailed(true)}
+      className="neon-btn rounded-lg object-cover"
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
 // ---- App ---------------------------------------------------------------
 
 export default function App() {
@@ -361,7 +421,9 @@ export default function App() {
   const [bootStep, setBootStep] = useState(0);
   const typed = useTypedLines(TERMINAL_LINES);
   const [form, setForm] = useState({ nome: "", email: "", assunto: "", mensagem: "" });
-  const mouse = useMouse();
+  const [sendStatus, setSendStatus] = useState("idle"); // idle | sending | success | error
+  const isDesktop = useIsDesktop();
+  const mouse = useMouse(isDesktop);
   const active = useActiveSection(NAV_ITEMS.map((n) => n.id));
 
   const t = THEME[theme];
@@ -377,11 +439,27 @@ export default function App() {
 
   const toggleTheme = useCallback(() => setTheme((v) => (v === "dark" ? "light" : "dark")), []);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    const body = encodeURIComponent(`Nome: ${form.nome}\nE-mail: ${form.email}\n\n${form.mensagem}`);
-    const subject = encodeURIComponent(form.assunto || "Contato pelo portfólio");
-    window.location.href = `mailto:${CONTACTS.email}?subject=${subject}&body=${body}`;
+    setSendStatus("sending");
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          nome: form.nome,
+          email: form.email,
+          assunto: form.assunto || "Contato pelo portfólio",
+          mensagem: form.mensagem,
+        },
+        { publicKey: EMAILJS_PUBLIC_KEY }
+      );
+      setSendStatus("success");
+      setForm({ nome: "", email: "", assunto: "", mensagem: "" });
+    } catch (err) {
+      console.error("Falha ao enviar via EmailJS:", err);
+      setSendStatus("error");
+    }
   };
 
   const scrollTo = (id) => (e) => {
@@ -397,7 +475,7 @@ export default function App() {
   return (
     <div
       style={{ background: t.bg, color: t.text }}
-      className="relative min-h-screen w-full font-sans transition-colors duration-500 selection:bg-cyan-500/30 cursor-none"
+      className={`relative min-h-screen w-full font-sans transition-colors duration-500 selection:bg-cyan-500/30 ${isDesktop ? "cursor-none" : ""}`}
     >
       <style>{`
         html { scroll-behavior: smooth; }
@@ -452,28 +530,39 @@ export default function App() {
         </div>
       )}
 
-      {/* cursor customizado: seta preta com brilho neon ao redor */}
-      <svg
-        className="neon-cursor"
-        width="26"
-        height="26"
-        viewBox="0 0 26 26"
-        style={{ transform: `translate(${mouse.x - 2}px, ${mouse.y - 2}px)` }}
-      >
-        <path
-          d="M3 2 L3 20 L8 15.5 L11.5 22.5 L14.5 21 L11 14 L18 14 Z"
-          fill="#0a0a0a"
-          stroke="#ffffff"
-          strokeWidth="1.2"
-          strokeLinejoin="round"
-        />
-      </svg>
+      {/* cursor customizado: seta preta com brilho neon ao redor — só desktop, some quando o mouse sai da janela */}
+      {isDesktop && (
+        <svg
+          className="neon-cursor"
+          width="26"
+          height="26"
+          viewBox="0 0 26 26"
+          style={{
+            transform: `translate(${mouse.x - 2}px, ${mouse.y - 2}px)`,
+            opacity: mouse.active ? 1 : 0,
+            transition: "opacity .2s ease",
+          }}
+        >
+          <path
+            d="M3 2 L3 20 L8 15.5 L11.5 22.5 L14.5 21 L11 14 L18 14 Z"
+            fill="#0a0a0a"
+            stroke="#ffffff"
+            strokeWidth="1.2"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
 
-      {/* spotlight seguindo o mouse */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{ background: `radial-gradient(560px circle at ${mouse.x}px ${mouse.y}px, ${t.accent}1f, transparent 70%)` }}
-      />
+      {/* spotlight seguindo o mouse — mesma regra: só desktop, some ao sair da janela */}
+      {isDesktop && (
+        <div
+          className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
+          style={{
+            opacity: mouse.active ? 1 : 0,
+            background: `radial-gradient(560px circle at ${mouse.x}px ${mouse.y}px, ${t.accent}1f, transparent 70%)`,
+          }}
+        />
+      )}
 
       {/* NAV */}
       <header
@@ -482,12 +571,7 @@ export default function App() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div
-              className="neon-btn flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold"
-              style={{ background: `linear-gradient(135deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}
-            >
-              {INITIALS}
-            </div>
+            <PhotoBadge t={t} size={36} />
             <span className="font-semibold tracking-wide">{NAME.toUpperCase()}</span>
           </div>
           <div className="flex items-center gap-3 sm:gap-6">
@@ -756,9 +840,7 @@ export default function App() {
           <Reveal className="grid gap-6 lg:grid-cols-[320px_1fr]">
             <div className="flex flex-col justify-between rounded-2xl border p-6" style={{ borderColor: t.border, background: t.card }}>
               <div>
-                <div className="neon-btn flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold" style={{ background: `linear-gradient(135deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}>
-                  {INITIALS}
-                </div>
+                <PhotoBadge t={t} size={56} />
                 <h3 className="mt-4 text-lg font-semibold">Vamos nos conectar</h3>
                 <div className="mt-4 flex gap-3">
                   {[
@@ -822,11 +904,22 @@ export default function App() {
                 </label>
                 <button
                   type="submit"
-                  className="neon-btn mt-2 flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-transform hover:scale-[1.02] sm:col-span-2"
+                  disabled={sendStatus === "sending"}
+                  className="neon-btn mt-2 flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-transform hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100 sm:col-span-2"
                   style={{ background: `linear-gradient(90deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}
                 >
-                  <Send size={15} /> Enviar mensagem
+                  <Send size={15} /> {sendStatus === "sending" ? "Enviando..." : "Enviar mensagem"}
                 </button>
+                {sendStatus === "success" && (
+                  <p className="text-sm sm:col-span-2" style={{ color: t.accent }}>
+                    Mensagem enviada. Retorno em breve.
+                  </p>
+                )}
+                {sendStatus === "error" && (
+                  <p className="text-sm text-red-400 sm:col-span-2">
+                    Não deu pra enviar agora. Tenta de novo em instantes ou usa o e-mail direto.
+                  </p>
+                )}
               </form>
             </div>
           </Reveal>
