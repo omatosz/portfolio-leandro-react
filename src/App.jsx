@@ -53,13 +53,13 @@ const TECH_RADAR = ["Linux", "Python", "SQL", "Redes TCP/IP", "Wireshark", "SIEM
 
 const PROJECTS = [
   {
-    tag: "PROJETO EM DESTAQUE",
+    tag: "PROJETO EM DESENVOLVIMENTO",
     title: "HoneyPot SSH",
     desc: "Honeypot que simula um serviço SSH vulnerável para atrair tentativas de invasão. Registra IPs, credenciais testadas e comandos executados pelo atacante, gerando dados reais de comportamento para análise de ameaças.",
     tags: ["Python", "Linux", "Docker", "SSH", "Logging"],
   },
   {
-    tag: "PROJETO EM DESTAQUE",
+    tag: "PROJETO EM DESENVOLVIMENTO",
     title: "SIEM Simples",
     desc: "Sistema simplificado de SIEM que centraliza logs de diferentes fontes, correlaciona eventos suspeitos e dispara alertas em tempo real, pensado para dar visibilidade rápida sobre o que está acontecendo na rede.",
     tags: ["Python", "SQL", "Log Parsing", "Dashboards", "Alertas"],
@@ -809,7 +809,7 @@ export default function App() {
       <section id="projetos" className="relative z-10 border-b" style={{ borderColor: t.border }}>
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-6 sm:py-20">
           <Reveal>
-            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: t.accent }}>Projetos em destaque</p>
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: t.accent }}>Projetos em desenvolvimento</p>
             <h2 className="mt-3 max-w-2xl text-3xl font-bold leading-snug sm:text-4xl">Ferramentas construídas para detectar, registrar e responder.</h2>
           </Reveal>
 
