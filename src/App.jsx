@@ -1,12 +1,33 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import emailjs from "@emailjs/browser";
+import {
+  Mail,
+  MapPin,
+  Check,
+  ArrowUpRight,
+  Terminal,
+  ShieldCheck,
+  Radar,
+  Send,
+  Sun,
+  Moon,
+} from "lucide-react";
+
+// ---- EmailJS (preencha depois de criar a conta em emailjs.com) --------
+// 1. Crie uma conta em https://www.emailjs.com/
+// 2. Crie um Service (ex.: Gmail) e um Template com os campos: nome, email, assunto, mensagem
+// 3. Cole os 3 IDs abaixo. O PUBLIC_KEY pode ficar exposto no front, é feito pra isso.
+const EMAILJS_SERVICE_ID = "COLE_SEU_SERVICE_ID_AQUI";
+const EMAILJS_TEMPLATE_ID = "COLE_SEU_TEMPLATE_ID_AQUI";
+const EMAILJS_PUBLIC_KEY = "COLE_SUA_PUBLIC_KEY_AQUI";
 
 // ---- Conteúdo (edite aqui) ---------------------------------------------
 const NAME = "Leandro Matos";
 const INITIALS = "LM";
 const ROLE = "Analista de Cibersegurança e Suporte especializado";
 const BIO = [
-  "Sou analista especializado em Cibersegurança, atuando no blue team com foco em monitorar, detectar e responder a ameaças antes que elas virem incidentes.",
-  "Minha base em suporte técnico me deu uma visão prática de infraestrutura: redes, sistemas e o dia a dia de quem depende deles funcionando. Isso molda a forma como penso segurança não só teoria, mas o que realmente protege um ambiente real.",
+  "Sou analista especializado em Cibersegurança, atuando no blue team — foco em monitorar, detectar e responder a ameaças antes que elas virem incidentes.",
+  "Minha base em suporte técnico me deu uma visão prática de infraestrutura: redes, sistemas e o dia a dia de quem depende deles funcionando. Isso molda a forma como penso segurança — não só teoria, mas o que realmente protege um ambiente real.",
   "Atualmente também estou me especializando para atuar como Analista NOC (Network Operations Center), unindo monitoramento de rede e disponibilidade de infraestrutura à resposta a incidentes de segurança.",
   "Construo e estudo ferramentas de detecção (honeypots, SIEM) para entender o comportamento de um atacante e transformar isso em alertas e respostas mais rápidas.",
 ];
@@ -20,7 +41,7 @@ const CONTACTS = {
 
 const FOCUS_CARDS = [
   { title: "Monitoramento & Detecção", desc: "Acompanhamento de logs e tráfego em busca de sinais de comportamento anômalo." },
-  { title: "NOC em especialização", desc: "Monitoramento de disponibilidade e saúde de rede, correlacionando falhas de infraestrutura com possíveis incidentes de segurança." },
+  { title: "NOC — em especialização", desc: "Monitoramento de disponibilidade e saúde de rede, correlacionando falhas de infraestrutura com possíveis incidentes de segurança." },
   { title: "Resposta a Incidentes", desc: "Triagem e contenção de ameaças, do primeiro alerta até a mitigação." },
   { title: "Hardening & Suporte", desc: "Redução de superfície de ataque e suporte técnico especializado em infraestrutura." },
 ];
@@ -40,19 +61,19 @@ const TABS = {
   ],
 };
 
-const TECH_RADAR = ["Linux", "Python", "SQL", "Redes TCP/IP", "Wireshark", "SIEM", "Honeypots", "Firewall", "Nmap", "Blue Team", "NOC", "Hardening", "Suporte N1", "Git"];
+const TECH_RADAR = ["Linux", "Python", "SQL", "Redes TCP/IP", "Wireshark", "SIEM", "Honeypots", "Firewall", "Nmap", "Blue Team", "NOC", "Hardening", "Suporte N2", "Git"];
 
 const PROJECTS = [
   {
-    tag: "PROJETO EM DESENVOLVIMENTO",
+    tag: "PROJETO EM DESTAQUE",
     title: "HoneyPot SSH",
     desc: "Honeypot que simula um serviço SSH vulnerável para atrair tentativas de invasão. Registra IPs, credenciais testadas e comandos executados pelo atacante, gerando dados reais de comportamento para análise de ameaças.",
     tags: ["Python", "Linux", "Docker", "SSH", "Logging"],
   },
   {
-    tag: "PROJETO EM DESENVOLVIMENTO",
+    tag: "PROJETO EM DESTAQUE",
     title: "SIEM Simples",
-    desc: "Sistema simplificado de SIEM que centraliza logs de diferentes fontes, correlaciona eventos suspeitos e dispara alertas em tempo real pensado para dar visibilidade rápida sobre o que está acontecendo na rede.",
+    desc: "Sistema simplificado de SIEM que centraliza logs de diferentes fontes, correlaciona eventos suspeitos e dispara alertas em tempo real — pensado para dar visibilidade rápida sobre o que está acontecendo na rede.",
     tags: ["Python", "SQL", "Log Parsing", "Dashboards", "Alertas"],
   },
 ];
@@ -153,18 +174,73 @@ function useTypedLines(lines, speed = 45, pause = 1200) {
   return display;
 }
 
-function useMouse() {
-  const [pos, setPos] = useState({ x: -200, y: -200, nx: 0, ny: 0 });
+// detecta se é um dispositivo com mouse de verdade (não celular/tablet no touch)
+function useIsDesktop() {
+  const query = "(hover: hover) and (pointer: fine)";
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(query).matches
+  );
   useEffect(() => {
-    const handler = (e) => {
+    const mql = window.matchMedia(query);
+    const handler = (e) => setIsDesktop(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+  return isDesktop;
+}
+
+function useMouse(enabled) {
+  const [pos, setPos] = useState({ x: -200, y: -200, nx: 0, ny: 0, active: false });
+  useEffect(() => {
+    if (!enabled) return;
+    const handleMove = (e) => {
       const nx = (e.clientX / window.innerWidth) * 2 - 1;
       const ny = (e.clientY / window.innerHeight) * 2 - 1;
-      setPos({ x: e.clientX, y: e.clientY, nx, ny });
+      setPos({ x: e.clientX, y: e.clientY, nx, ny, active: true });
     };
-    window.addEventListener("mousemove", handler);
-    return () => window.removeEventListener("mousemove", handler);
-  }, []);
+    // some da tela quando o mouse sai da janela (ex.: sobe até a barra de URL)
+    // ou quando a aba perde o foco, senão o efeito fica "travado" no último ponto
+    const handleLeave = () => setPos((p) => ({ ...p, active: false }));
+
+    window.addEventListener("mousemove", handleMove);
+    document.documentElement.addEventListener("mouseleave", handleLeave);
+    window.addEventListener("blur", handleLeave);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      document.documentElement.removeEventListener("mouseleave", handleLeave);
+      window.removeEventListener("blur", handleLeave);
+    };
+  }, [enabled]);
   return pos;
+}
+
+// rastro glitch que segue o mouse sem esconder o cursor real
+function useGlitchTrail(mouse, enabled) {
+  const [trail, setTrail] = useState([]);
+  const lastRef = useRef(0);
+  const idRef = useRef(0);
+
+  useEffect(() => {
+    if (!enabled || !mouse.active) {
+      setTrail([]);
+      return;
+    }
+    const now = Date.now();
+    if (now - lastRef.current < 45) return;
+    lastRef.current = now;
+    idRef.current += 1;
+    const point = { id: idRef.current, x: mouse.x, y: mouse.y };
+    setTrail((prev) => [...prev.slice(-7), point]);
+  }, [mouse.x, mouse.y, mouse.active, enabled]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTrail((prev) => (prev.length ? prev.slice(1) : prev));
+    }, 90);
+    return () => clearInterval(interval);
+  }, []);
+
+  return trail;
 }
 
 function useReveal() {
@@ -208,100 +284,6 @@ function useActiveSection(ids) {
   return active;
 }
 
-function Icon({ children, size = 16, ...props }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      {children}
-    </svg>
-  );
-}
-
-const Sun = (props) => (
-  <Icon {...props}>
-    <circle cx="12" cy="12" r="4" />
-    <line x1="12" y1="2" x2="12" y2="4" />
-    <line x1="12" y1="20" x2="12" y2="22" />
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-    <line x1="2" y1="12" x2="4" y2="12" />
-    <line x1="20" y1="12" x2="22" y2="12" />
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-  </Icon>
-);
-
-const Moon = (props) => (
-  <Icon {...props}>
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-  </Icon>
-);
-
-const Terminal = (props) => (
-  <Icon {...props}>
-    <polyline points="4 17 10 11 4 5" />
-    <line x1="12" y1="19" x2="20" y2="19" />
-  </Icon>
-);
-
-const ShieldCheck = (props) => (
-  <Icon {...props}>
-    <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3z" />
-    <polyline points="9 12 11 14 15 10" />
-  </Icon>
-);
-
-const Radar = (props) => (
-  <Icon {...props}>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 3a9 9 0 0 1 9 9" />
-    <circle cx="17" cy="7" r="1.3" fill="currentColor" stroke="none" />
-  </Icon>
-);
-
-const Send = (props) => (
-  <Icon {...props}>
-    <line x1="22" y1="2" x2="11" y2="13" />
-    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-  </Icon>
-);
-
-const Mail = (props) => (
-  <Icon {...props}>
-    <rect x="2" y="4" width="20" height="16" rx="2" />
-    <polyline points="2 7 12 13 22 7" />
-  </Icon>
-);
-
-const MapPin = (props) => (
-  <Icon {...props}>
-    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
-    <circle cx="12" cy="10" r="3" />
-  </Icon>
-);
-
-const Check = (props) => (
-  <Icon {...props}>
-    <polyline points="20 6 9 17 4 12" />
-  </Icon>
-);
-
-const ArrowUpRight = (props) => (
-  <Icon {...props}>
-    <line x1="7" y1="17" x2="17" y2="7" />
-    <polyline points="7 7 17 7 17 17" />
-  </Icon>
-);
-
 function GithubIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" {...props}>
@@ -326,6 +308,30 @@ function WhatsAppIcon(props) {
   );
 }
 
+// foto de perfil, com fallback pras iniciais caso o arquivo ainda não exista em /public
+function PhotoBadge({ t, size = 36 }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div
+        className="neon-btn flex items-center justify-center rounded-lg text-sm font-bold"
+        style={{ width: size, height: size, background: `linear-gradient(135deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}
+      >
+        {INITIALS}
+      </div>
+    );
+  }
+  return (
+    <img
+      src="/profile.jpg"
+      alt={NAME}
+      onError={() => setFailed(true)}
+      className="neon-btn rounded-lg object-cover"
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
 // componente de seção que "revela" ao entrar na tela
 function Reveal({ as: Tag = "div", className = "", children, ...rest }) {
   const [ref, visible] = useReveal();
@@ -345,7 +351,10 @@ export default function App() {
   const [bootStep, setBootStep] = useState(0);
   const typed = useTypedLines(TERMINAL_LINES);
   const [form, setForm] = useState({ nome: "", email: "", assunto: "", mensagem: "" });
-  const mouse = useMouse();
+  const [sendStatus, setSendStatus] = useState("idle"); // idle | sending | success | error
+  const isDesktop = useIsDesktop();
+  const mouse = useMouse(isDesktop);
+  const trail = useGlitchTrail(mouse, isDesktop);
   const active = useActiveSection(NAV_ITEMS.map((n) => n.id));
 
   const t = THEME[theme];
@@ -361,11 +370,27 @@ export default function App() {
 
   const toggleTheme = useCallback(() => setTheme((v) => (v === "dark" ? "light" : "dark")), []);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    const body = encodeURIComponent(`Nome: ${form.nome}\nE-mail: ${form.email}\n\n${form.mensagem}`);
-    const subject = encodeURIComponent(form.assunto || "Contato pelo portfólio");
-    window.location.href = `mailto:${CONTACTS.email}?subject=${subject}&body=${body}`;
+    setSendStatus("sending");
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          nome: form.nome,
+          email: form.email,
+          assunto: form.assunto || "Contato pelo portfólio",
+          mensagem: form.mensagem,
+        },
+        { publicKey: EMAILJS_PUBLIC_KEY }
+      );
+      setSendStatus("success");
+      setForm({ nome: "", email: "", assunto: "", mensagem: "" });
+    } catch (err) {
+      console.error("Falha ao enviar via EmailJS:", err);
+      setSendStatus("error");
+    }
   };
 
   const scrollTo = (id) => (e) => {
@@ -380,7 +405,7 @@ export default function App() {
   return (
     <div
       style={{ background: t.bg, color: t.text }}
-      className="relative min-h-screen w-full font-sans transition-colors duration-500 selection:bg-cyan-500/30 cursor-none"
+      className="relative min-h-screen w-full font-sans transition-colors duration-500 selection:bg-cyan-500/30"
     >
       <style>{`
         html { scroll-behavior: smooth; }
@@ -402,13 +427,20 @@ export default function App() {
         .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
         .reveal-visible { opacity: 1; transform: translateY(0); }
 
-        .neon-cursor {
+        .glitch-dot {
           position: fixed;
           top: 0; left: 0;
+          width: 6px; height: 6px;
+          border-radius: 1px;
           pointer-events: none;
           z-index: 60;
-          filter: drop-shadow(0 0 3px ${t.accent}) drop-shadow(0 0 9px ${t.accent}) drop-shadow(0 0 16px ${t.accent}aa);
+          mix-blend-mode: difference;
         }
+        .glitch-dot::before, .glitch-dot::after {
+          content: ""; position: absolute; inset: 0; border-radius: 1px; mix-blend-mode: difference;
+        }
+        .glitch-dot::before { background: ${t.accent2}; transform: translate(1.5px,-1px); }
+        .glitch-dot::after { background: #00fff2; transform: translate(-1.5px,1px); }
 
         @keyframes bootBar { from { width: 0% } to { width: 100% } }
         .boot-bar { animation: bootBar 1.9s ease forwards; }
@@ -435,28 +467,29 @@ export default function App() {
         </div>
       )}
 
-      {/* cursor customizado: seta preta com brilho neon ao redor */}
-      <svg
-        className="neon-cursor"
-        width="26"
-        height="26"
-        viewBox="0 0 26 26"
-        style={{ transform: `translate(${mouse.x - 2}px, ${mouse.y - 2}px)` }}
-      >
-        <path
-          d="M3 2 L3 20 L8 15.5 L11.5 22.5 L14.5 21 L11 14 L18 14 Z"
-          fill="#0a0a0a"
-          stroke="#ffffff"
-          strokeWidth="1.2"
-          strokeLinejoin="round"
-        />
-      </svg>
+      {/* rastro glitch do cursor — só no desktop, e só enquanto o mouse se move dentro da janela */}
+      {isDesktop &&
+        trail.map((p, i) => (
+          <div
+            key={p.id}
+            className="glitch-dot"
+            style={{
+              transform: `translate(${p.x - 3}px, ${p.y - 3}px)`,
+              opacity: (i + 1) / trail.length,
+            }}
+          />
+        ))}
 
-      {/* spotlight seguindo o mouse */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{ background: `radial-gradient(560px circle at ${mouse.x}px ${mouse.y}px, ${t.accent}1f, transparent 70%)` }}
-      />
+      {/* spotlight seguindo o mouse — some suavemente quando o mouse sai da janela */}
+      {isDesktop && (
+        <div
+          className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
+          style={{
+            opacity: mouse.active ? 1 : 0,
+            background: `radial-gradient(560px circle at ${mouse.x}px ${mouse.y}px, ${t.accent}1f, transparent 70%)`,
+          }}
+        />
+      )}
 
       {/* NAV */}
       <header
@@ -465,12 +498,7 @@ export default function App() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div
-              className="neon-btn flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold"
-              style={{ background: `linear-gradient(135deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}
-            >
-              {INITIALS}
-            </div>
+            <PhotoBadge t={t} size={36} />
             <span className="font-semibold tracking-wide">{NAME.toUpperCase()}</span>
           </div>
           <div className="flex items-center gap-6">
@@ -516,12 +544,12 @@ export default function App() {
               <br />
               Resposta rápida.
               <br />
-              <span style={{ color: t.accent }}>
+              <span style={{ background: `linear-gradient(90deg, ${t.accent}, ${t.accent2})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
                 Sinais que protegem.
               </span>
             </h1>
             <p className="mt-6 max-w-md" style={{ color: t.textMuted }}>
-              {ROLE}, se especializando em NOC. Foco em detecção de ameaças, monitoramento de rede e resposta a incidentes  blue team no dia a dia.
+              {ROLE}, se especializando em NOC. Foco em detecção de ameaças, monitoramento de rede e resposta a incidentes — blue team no dia a dia.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <a
@@ -633,7 +661,7 @@ export default function App() {
             </p>
             <h2 className="mt-4 text-3xl font-bold leading-tight">Capacidade técnica com leitura de ameaça real.</h2>
             <p className="mt-4" style={{ color: t.textMuted }}>
-              A combinação entre suporte técnico, redes e segurança cria uma base sólida para atuar tanto na prevenção quanto na resposta e é essa base que sustenta minha transição para NOC.
+              A combinação entre suporte técnico, redes e segurança cria uma base sólida para atuar tanto na prevenção quanto na resposta — e é essa base que sustenta minha transição para NOC.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               {Object.keys(TABS).map((tabName) => (
@@ -712,9 +740,7 @@ export default function App() {
           <Reveal className="grid gap-6 lg:grid-cols-[320px_1fr]">
             <div className="flex flex-col justify-between rounded-2xl border p-6" style={{ borderColor: t.border, background: t.card }}>
               <div>
-                <div className="neon-btn flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold" style={{ background: `linear-gradient(135deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}>
-                  {INITIALS}
-                </div>
+                <PhotoBadge t={t} size={56} />
                 <h3 className="mt-4 text-lg font-semibold">Vamos nos conectar</h3>
                 <div className="mt-4 flex gap-3">
                   {[
@@ -778,11 +804,22 @@ export default function App() {
                 </label>
                 <button
                   type="submit"
-                  className="neon-btn mt-2 flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-transform hover:scale-[1.02] sm:col-span-2"
+                  disabled={sendStatus === "sending"}
+                  className="neon-btn mt-2 flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-transform hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100 sm:col-span-2"
                   style={{ background: `linear-gradient(90deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}
                 >
-                  <Send size={15} /> Enviar mensagem
+                  <Send size={15} /> {sendStatus === "sending" ? "Enviando..." : "Enviar mensagem"}
                 </button>
+                {sendStatus === "success" && (
+                  <p className="text-sm sm:col-span-2" style={{ color: t.accent }}>
+                    Mensagem enviada. Retorno em breve.
+                  </p>
+                )}
+                {sendStatus === "error" && (
+                  <p className="text-sm text-red-400 sm:col-span-2">
+                    Não deu pra enviar agora. Tenta de novo em instantes ou usa o e-mail direto.
+                  </p>
+                )}
               </form>
             </div>
           </Reveal>
