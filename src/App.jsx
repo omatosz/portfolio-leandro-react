@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import emailjs from "@emailjs/browser";
 
+import { BeamsCanvas } from "./components/BeamsCanvas";
+
 // ---- EmailJS (preencha depois de criar a conta em emailjs.com) --------
 // 1. Crie uma conta em https://www.emailjs.com/
 // 2. Crie um Service (ex.: Gmail) e um Template com os campos: nome, email, assunto, mensagem
@@ -53,16 +55,14 @@ const TECH_RADAR = ["Linux", "Python", "SQL", "Redes TCP/IP", "Wireshark", "SIEM
 
 const PROJECTS = [
   {
-    tag: "PROJETO EM DESENVOLVIMENTO",
-    title: "HoneyPot SSH",
-    desc: "Honeypot que simula um serviço SSH vulnerável para atrair tentativas de invasão. Registra IPs, credenciais testadas e comandos executados pelo atacante, gerando dados reais de comportamento para análise de ameaças.",
-    tags: ["Python", "Linux", "Docker", "SSH", "Logging"],
-  },
-  {
-    tag: "PROJETO EM DESENVOLVIMENTO",
-    title: "SIEM Simples",
-    desc: "Sistema simplificado de SIEM que centraliza logs de diferentes fontes, correlaciona eventos suspeitos e dispara alertas em tempo real, pensado para dar visibilidade rápida sobre o que está acontecendo na rede.",
-    tags: ["Python", "SQL", "Log Parsing", "Dashboards", "Alertas"],
+    tag: "PROJETO CONCLUÍDO",
+    title: "Veryon",
+    desc: "Laboratório de SOC/SIEM completo: honeypot pra captura de ataques reais, coleta e análise de logs, motor de detecção com regras Sigma, mapeamento MITRE ATT&CK, integração com threat intelligence, dashboard de triagem e resposta a incidente com bloqueio real de IP direto no honeypot.",
+    tags: ["Python", "FastAPI", "React", "TypeScript", "PostgreSQL", "Docker"],
+    links: [
+      { label: "Ver repositório", href: "https://github.com/omatosz/veryon" },
+      { label: "Ver demonstração", href: "https://omatosz.github.io/veryon/" },
+    ],
   },
 ];
 
@@ -102,7 +102,6 @@ const THEME = {
     navBg: "rgba(8,11,18,0.86)",
     accent: "#22d3ee",
     accent2: "#f472ff",
-    gridLine: "rgba(34,211,238,0.08)",
     terminalBg: "#0c1017",
     terminalText: "#67e8f9",
     terminalAlert: "#fbbf24",
@@ -119,7 +118,6 @@ const THEME = {
     navBg: "rgba(238,242,248,0.92)",
     accent: "#0891b2",
     accent2: "#c026d3",
-    gridLine: "rgba(8,145,178,0.11)",
     terminalBg: "#0f172a",
     terminalText: "#67e8f9",
     terminalAlert: "#f59e0b",
@@ -484,12 +482,6 @@ export default function App() {
         .pulse-dot { animation: pulseDot 1.8s ease-in-out infinite; }
         @keyframes blinkCursor { 0%,49%{opacity:1} 50%,100%{opacity:0} }
         .blink { animation: blinkCursor 1s steps(1) infinite; }
-        .grid-bg {
-          background-image:
-            linear-gradient(${t.gridLine} 1px, transparent 1px),
-            linear-gradient(90deg, ${t.gridLine} 1px, transparent 1px);
-          background-size: 42px 42px;
-        }
         .mono { font-family: ui-monospace, "JetBrains Mono", Menlo, monospace; }
         .neon-card:hover { box-shadow: ${t.glow}; }
         .neon-btn { box-shadow: ${t.glow}; }
@@ -628,7 +620,8 @@ export default function App() {
       </header>
 
       {/* HERO */}
-      <section className="grid-bg relative z-10 overflow-hidden border-b" style={{ borderColor: t.border }}>
+      <section className="relative z-10 overflow-hidden border-b" style={{ borderColor: t.border, background: t.bg }}>
+        <BeamsCanvas intensity="medium" />
         <div
           className="pointer-events-none absolute -top-32 right-0 h-96 w-96 rounded-full blur-3xl"
           style={{ background: `${t.accent}29`, transform: `translate(${mouse.nx * 24}px, ${mouse.ny * 24}px)` }}
@@ -809,23 +802,43 @@ export default function App() {
       <section id="projetos" className="relative z-10 border-b" style={{ borderColor: t.border }}>
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-6 sm:py-20">
           <Reveal>
-            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: t.accent }}>Projetos em desenvolvimento</p>
-            <h2 className="mt-3 max-w-2xl text-3xl font-bold leading-snug sm:text-4xl">Ferramentas construídas para detectar, registrar e responder.</h2>
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: t.accent }}>Projeto em destaque</p>
+            <h2 className="mt-3 max-w-2xl text-3xl font-bold leading-snug sm:text-4xl">Uma ferramenta construída para detectar, registrar e responder.</h2>
           </Reveal>
 
-          <Reveal className="mt-10 grid gap-6 sm:grid-cols-2">
+          <Reveal className="mt-10">
             {PROJECTS.map((p) => (
-              <div key={p.title} className="neon-card flex flex-col rounded-2xl border p-6" style={{ borderColor: t.border, background: t.card }}>
-                <span className="w-fit rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" style={{ borderColor: t.border, color: t.textMuted }}>
-                  {p.tag}
-                </span>
-                <h3 className="mt-4 text-xl font-bold">{p.title}</h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed" style={{ color: t.textMuted }}>{p.desc}</p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {p.tags.map((tg) => (
-                    <span key={tg} className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: `${t.accent}24`, color: t.accent }}>
-                      {tg}
-                    </span>
+              <div
+                key={p.title}
+                className="neon-card grid gap-8 rounded-2xl border p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center"
+                style={{ borderColor: t.border, background: t.card }}
+              >
+                <div>
+                  <span className="w-fit rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" style={{ borderColor: t.border, color: t.textMuted }}>
+                    {p.tag}
+                  </span>
+                  <h3 className="mt-4 text-2xl font-bold">{p.title}</h3>
+                  <p className="mt-3 max-w-xl text-sm leading-relaxed" style={{ color: t.textMuted }}>{p.desc}</p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {p.tags.map((tg) => (
+                      <span key={tg} className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: `${t.accent}24`, color: t.accent }}>
+                        {tg}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-row gap-3 lg:min-w-[190px] lg:flex-col">
+                  {p.links.map((link) => (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="neon-btn flex items-center justify-center gap-1.5 rounded-lg px-5 py-3 text-sm font-semibold transition-transform hover:scale-[1.03]"
+                      style={{ background: `linear-gradient(90deg, ${t.accent}, ${t.accent2})`, color: t.btnText }}
+                    >
+                      {link.label} <ArrowUpRight size={14} />
+                    </a>
                   ))}
                 </div>
               </div>
