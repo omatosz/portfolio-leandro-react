@@ -1,16 +1,39 @@
-# React + Vite
+# Portfólio de Leandro Matos
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Site pessoal em português e inglês, com apresentação, projetos (Veryon em destaque),
+trajetória e contato. No ar em https://portfolio-leandro-react.vercel.app
 
-Currently, two official plugins are available:
+## Rodar na sua máquina
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Precisa do Node 20 ou mais novo. No terminal, dentro desta pasta:
 
-## React Compiler
+```bash
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Depois abra o endereço que aparecer no terminal (normalmente `http://localhost:5173`).
 
-## Expanding the ESLint configuration
+## Onde mexer
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+| O que | Onde |
+|---|---|
+| Textos dos dois idiomas | `src/i18n/content.js` |
+| Cores e fontes | `src/index.css`, no bloco `@theme` |
+| Efeito de letras falhando | `src/components/Glitch.jsx` |
+| Foto do topo | `src/assets/leandro-retrato.jpg` (recorte 4:5) |
+| Ícones da faixa embaixo da foto | `src/data/tecnologias.js` |
+| Marca do cabeçalho (chapéu de palha) | `src/assets/chapeu-de-palha.png` (PNG transparente) |
+| Formulário de contato (EmailJS) | `src/components/Contact.jsx` |
+
+Os textos têm as mesmas chaves em `pt` e `en`. Ao mudar um, mude o outro também.
+
+## Publicar
+
+A Vercel publica sozinha a cada push na `main`. Antes de subir, `npm run build`
+confirma que o site compila.
+
+## Tecnologias
+
+React 19, Vite, Tailwind CSS 4, Motion para as animações e fontes servidas pelo
+próprio site (Anybody, Archivo e IBM Plex Mono).
